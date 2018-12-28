@@ -40,9 +40,23 @@ void print_polinomy(Monomy *monomy, int boo){
     if(monomy -> coefficient){
         if(monomy -> degree){
             if(boo){
-                printf(" + %dX^%d", monomy -> coefficient, monomy -> degree);
+                if(monomy -> coefficient > 1){
+                    printf(" + %dX", monomy -> coefficient);
+                } else {
+                    printf(" + X");
+                }
+                if(monomy -> degree > 1){
+                    printf("^%d", monomy -> degree);
+                }
             } else {
-                printf("%dX^%d", monomy -> coefficient, monomy -> degree);
+                if(monomy -> coefficient > 1){
+                    printf("%dX", monomy -> coefficient, monomy -> degree);
+                } else {
+                    printf("X");
+                }
+                if(monomy -> degree > 1){
+                    printf("^%d", monomy -> degree);
+                }
                 boo = 1;
             }
         } else {
@@ -90,7 +104,7 @@ int modularnegativitiator(int n){
             n = modulo + n;
         }
     } else {
-        n %= modulo;
+        n = (n % modulo);
     }
     return n;
 }
@@ -245,7 +259,7 @@ int radix_pol(Polinomy pol){
         appo_radix = modularnegativitiator(appo_radix);
 
         if(!appo_radix){
-            return i;
+            return i+1;
         }
     }
     return 0;
@@ -303,7 +317,7 @@ int main(void){
         printf("Inserisci il coefficiente del termine a grado %d\n", i);
         fflush(stdout);
         scanf("%d", &coefficient);
-        modularnegativitiator(coefficient);
+        coefficient = modularnegativitiator(coefficient);
         insert_element(&generator_prime, coefficient, i);
     }
 
@@ -312,7 +326,7 @@ int main(void){
     printf("\n");
 
     if(radix_pol(generator_prime)){
-        printf("polinomio Riducibile !! radice (%d)", radix_pol(generator_prime));
+        printf("polinomio Riducibile !! radice (%d)\n", radix_pol(generator_prime)-1);
         exit(EXIT_SUCCESS);
     }
 
@@ -361,6 +375,13 @@ int main(void){
             }    
         printf("\n\n");
     }
+
+    printf("Press enter to close ...\n");
+    fflush(stdout);
+    int c;
+    while((c = getchar()) != '\n' && c != EOF);
+    getchar();
+
 
     return 0;
 }
