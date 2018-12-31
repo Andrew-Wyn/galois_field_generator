@@ -142,14 +142,14 @@ void copy_polinomy(Polinomy *blank, Polinomy *tocopy){
     
 }
 
-Polinomy division_rest(Polinomy *dividendo, Polinomy divisore){
-    while(divisore.tail->coefficient == 0){
+Polinomy division_rest(Polinomy dividendo, Polinomy divisore){
+    /*while(divisore.tail->coefficient == 0){//controll
         delete_last(&divisore);
-    }
+    }*/
     int degreedenom = divisore.tail->degree;
     Polinomy *p_ret, ret;
     p_ret = &ret;
-    copy_polinomy(p_ret, dividendo);
+    copy_polinomy(p_ret, &dividendo);
     Monomy appo;
     appo.degree = 0;
     appo.coefficient = 0;
@@ -187,46 +187,38 @@ Polinomy sum_polinomy(Polinomy pol_1, Polinomy pol_2){
     return sum;
 }
 
-Polinomy mult_polinomy_modulo(Polinomy pol_1, Polinomy pol_2, Polinomy generator_prime){ //optimize
+void destroy_polinomy(Monomy *head){
+    if(head == NULL) return;
+    destroy_polinomy(head -> next);
+    free(head);
+}
+
+Polinomy mult_polinomy_modulo(Polinomy pol_1, Polinomy pol_2, Polinomy generator_prime){
     Polinomy mul;
     mul.head = NULL;
     mul.tail = NULL;
 
-    int max_degree, min_degree;
-    Polinomy maxdegreepol;
-    maxdegreepol.head = NULL;
-    maxdegreepol.tail = NULL;
-    Polinomy mindegreepol;
-    mindegreepol.head = NULL;
-    mindegreepol.tail = NULL;
+    int degree_mul;
+    degree_mul = (pol_1.tail -> degree == pol_2.tail -> degree) ? pol_1.tail -> degree : 0;
 
-    if(pol_1.tail -> degree >= pol_2.tail -> degree){
-        max_degree = pol_1.tail -> degree;
-        maxdegreepol = pol_1;
-        mindegreepol = pol_2;
-        min_degree = pol_2.tail -> degree;
-    } else {
-        max_degree = pol_2.tail -> degree;
-        maxdegreepol = pol_2;
-        mindegreepol = pol_1;
-        min_degree = pol_1.tail -> degree;
+    if(!degree_mul){
+        printf("Errore! pol1 degree -> %d != pol2 degree -> %d", pol_1.tail -> degree, pol_2.tail -> degree);
+        exit(EXIT_SUCCESS);
     }
-
+    
     int appoMax = 0;
 
-
-
-    for(int i=0; i<=max_degree; i++){
+    for(int i=0; i<=degree_mul; i++){
         Polinomy appopol;
         appopol.head = NULL;
         appopol.tail = NULL;
         
-        for(int j=0; j<=min_degree; j++){
+        for(int j=0; j<=degree_mul; j++){
             Monomy appo;
-            appo = return_monomy_from_polinomy(maxdegreepol, i);
-            appo.coefficient = return_monomy_from_polinomy(mindegreepol, j).coefficient * return_monomy_from_polinomy(maxdegreepol, i).coefficient;
+            appo = return_monomy_from_polinomy(pol_1, i);
+            appo.coefficient = return_monomy_from_polinomy(pol_2, j).coefficient * return_monomy_from_polinomy(pol_1, i).coefficient;
             appo.coefficient = modularnegativitiator(appo.coefficient);
-            appo.degree = return_monomy_from_polinomy(mindegreepol, j).degree + return_monomy_from_polinomy(maxdegreepol, i).degree;
+            appo.degree = return_monomy_from_polinomy(pol_2, j).degree + return_monomy_from_polinomy(pol_1, i).degree;
             if(appo.degree > appoMax) appoMax = appo.degree;
             if(appopol.tail == NULL || appoMax == 0){    
                 insert_element(&appopol,0, 0);
@@ -238,12 +230,12 @@ Polinomy mult_polinomy_modulo(Polinomy pol_1, Polinomy pol_2, Polinomy generator
         }
         if(mul.tail != NULL){
             mul = sum_polinomy(mul, appopol);
+            destroy_polinomy(appopol.head); //avoid memory leak
         } else {
             mul = appopol;
         }
-        
     }
-    return division_rest(&mul, generator_prime);
+    return division_rest(mul, generator_prime);
 }
 
 int radix_pol(Polinomy pol){
@@ -277,7 +269,6 @@ void field_generator(Polinomy field[], int generator_prime_degree){
             appo_coeff /= modulo;
         }
         for(int j=0; j<generator_prime_degree; j++){
-            
             insert_element(field + i, coefficients[j], j);
         }
     }
@@ -339,7 +330,7 @@ int main(void){
         }
     }
 
-    Polinomy sub_modular_field= division_rest(&second, generator_prime);
+    Polinomy sub_modular_field= division_rest(second, generator_prime);
 
     printf("\n");
     printf("\ngeneratore: ");
@@ -359,8 +350,13 @@ int main(void){
     for(int i=0; i<(pow((double)modulo, (double)generator_prime_degree)); i++){
         printf("\t\t");
         for(int j=0; j<(pow((double)modulo, (double)generator_prime_degree)); j++){
-                print_polinomy(sum_polinomy(field[i], field[j]).tail, 0);
+                Polinomy appo;
+                appo.head = NULL;
+                appo.tail = NULL;
+                appo = sum_polinomy(field[i], field[j]);
+                print_polinomy(appo.tail, 0);
                 if(j != (pow((double)modulo, (double)generator_prime_degree))-1) printf(" | ");
+                destroy_polinomy(appo.head);
             }    
         printf("\n\n");
     }
@@ -370,13 +366,18 @@ int main(void){
     for(int i=0; i<(pow((double)modulo, (double)generator_prime_degree)); i++){
         printf("\t\t");
         for(int j=0; j<(pow((double)modulo, (double)generator_prime_degree)); j++){
-                print_polinomy(mult_polinomy_modulo(field[i],field[j], generator_prime).tail, 0);
+                Polinomy appo;
+                appo.head = NULL;
+                appo.tail = NULL;
+                appo = mult_polinomy_modulo(field[i],field[j], generator_prime);
+                print_polinomy(appo.tail, 0);
                 if(j != (pow((double)modulo, (double)generator_prime_degree))-1) printf(" | ");
+                destroy_polinomy(appo.head);
             }    
         printf("\n\n");
     }
 
-    printf("Press enter to close ...\n");
+    printf("\nPress enter to close ...\n");
     fflush(stdout);
     int c;
     while((c = getchar()) != '\n' && c != EOF);
