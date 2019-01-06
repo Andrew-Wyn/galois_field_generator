@@ -37,6 +37,8 @@ void make_rest_n_degree(Polinomy *rest_n_degree, Polinomy *sub_modular_field, Po
 void print_additive_matrix();
 void print_moltiplicative_matrix();
 void my_getchar(int get);
+void check_primality(Polinomy field[], Polinomy findirreduc, int *_is_prime);
+void print_from_file(char *filename);
 
 void insert_element(Polinomy *polinomy, int coefficient, int degree){
     Monomy *new = malloc(sizeof(struct Monomy));
@@ -284,6 +286,16 @@ int radix_pol(Polinomy pol){
     return 0;
 }
 
+void print_field(Polinomy field[]){
+    printf("\n\n\t\tCAMPO DI CARDINALITA' (%d)\n", (int)(pow((double)modulo, (double)generator_prime_degree)));
+    for(int i=0; i<(pow((double)modulo, (double)generator_prime_degree)); i++){
+        printf("\n");
+        printf("\t\t");
+        print_polinomy(field[i].tail, 0);
+        printf("\n");
+    }
+}
+
 void field_generator(Polinomy field[]){
     for(int i=0; i<(pow((double)modulo, (double)generator_prime_degree)); i++){
         field[i].head = NULL;
@@ -299,14 +311,7 @@ void field_generator(Polinomy field[]){
             insert_element(field + i, coefficients[j], j);
         }
     }
-
-    printf("\n\n\t\tCAMPO DI CARDINALITA' (%d)\n", (int)(pow((double)modulo, (double)generator_prime_degree)));
-    for(int i=0; i<(pow((double)modulo, (double)generator_prime_degree)); i++){
-        printf("\n");
-        printf("\t\t");
-        print_polinomy(field[i].tail, 0);
-        printf("\n");
-    }
+    print_field(field);
 }
 
 void make_generator_polinomy(Polinomy *generator_prime){
@@ -360,7 +365,7 @@ void make_rest_n_degree(Polinomy *rest_n_degree, Polinomy *sub_modular_field, Po
 }
 
 void print_additive_matrix(Polinomy field[]){
-    printf("\n\n\t\tTABELLA ADDITTIVA DI CAMPO:\n\n");
+    printf("\n\n\t\tTABELLA ADDITIVA DI CAMPO:\n\n");
     for(int i=0; i<(pow((double)modulo, (double)generator_prime_degree)); i++){
         printf("\t\t");
         for(int j=0; j<(pow((double)modulo, (double)generator_prime_degree)); j++){
@@ -433,7 +438,49 @@ void print_from_file(char *filename){
     fclose(file);
 }
 
-void irreduxor(Polinomy field[]){
+int is_null(Polinomy pol){
+    int sums;
+    Polinomy appo_is_null;
+    appo_is_null.head = NULL;
+    appo_is_null.tail = NULL;
+
+    copy_polinomy(&appo_is_null, &pol);
+
+    while(appo_is_null.tail->coefficient == 0 && appo_is_null.tail->degree != 0){
+        delete_last(&appo_is_null);
+    }
+
+    if(appo_is_null.tail->degree == 0 && appo_is_null.tail->coefficient == 0){
+        destroy_polinomy(appo_is_null.head);
+        return 1; 
+    } else {
+        destroy_polinomy(appo_is_null.head);
+        return 0;
+    }
+}
+
+int is_identity(Polinomy pol){
+    int sums;
+    Polinomy appo_is_null;
+    appo_is_null.head = NULL;
+    appo_is_null.tail = NULL;
+
+    copy_polinomy(&appo_is_null, &pol);
+
+    while(appo_is_null.tail->coefficient == 0 && appo_is_null.tail->degree != 0){
+        delete_last(&appo_is_null);
+    }
+
+    if(appo_is_null.tail->degree == 0 && appo_is_null.tail->coefficient == 1){
+        destroy_polinomy(appo_is_null.head);
+        return 1; 
+    } else {
+        destroy_polinomy(appo_is_null.head);
+        return 0;
+    }
+}
+
+void irreduxor(Polinomy field[]){ //macro funzione per calcolare l'irriducibilità di un polinomio a coefficienti in Zp su GF(p^n)
     int _is_prime = 1;
     Polinomy findirreduc;
     findirreduc.head = NULL;
@@ -477,6 +524,92 @@ void irreduxor(Polinomy field[]){
     }
 
     destroy_polinomy(findirreduc.head);
+}
+
+Polinomy polinomy_mult_constant(Polinomy pol, int n){
+    Polinomy mul;
+    mul.head = NULL;
+    mul.tail = NULL;
+
+    Monomy *mon = pol.head;
+
+    while(mon != NULL){
+        insert_element(&mul, modularnegativitiator((mon->coefficient)*n), mon->degree);
+        mon = mon->next;
+    }
+    return mul;
+}
+
+void degree_additive_calculator(Polinomy field[]){
+    Polinomy pol_to_calc;
+    pol_to_calc.head = NULL;
+    pol_to_calc.tail = NULL;
+    int to_calc;
+    int field_card = pow((double)modulo, (double)generator_prime_degree); 
+    do{
+        print_field(field);
+        printf("\nInserisci l'elemento del quale calcolare il grado additivo (1 - %d):\n", field_card-1);
+        fflush(stdout);
+        scanf("%d", &to_calc);
+    } while(to_calc < 1 || to_calc >= field_card);
+        
+    pol_to_calc = field[to_calc];
+
+    printf("\ncalcolare il grado additivo del polinomio: ");
+    print_polinomy(pol_to_calc.tail, 0);
+    printf(" ...\n\n");
+
+    for(int i=1; 1; i++){
+        Polinomy appo_to_calc = polinomy_mult_constant(pol_to_calc, i);
+        if(is_null(appo_to_calc)){
+            printf("Il grado additivo del polinomio è -> %d\n\n", i);
+            printf("ciò implica che ("), print_polinomy(pol_to_calc.tail, 0), printf(") * %d è uguale a 0 sopra a GF(%d^%d)\n\n", i, modulo, generator_prime_degree);
+            destroy_polinomy(appo_to_calc.head);
+            return;
+        }
+        destroy_polinomy(appo_to_calc.head);
+    }
+}
+
+void degree_molteplicity_calculator(Polinomy field[], Polinomy generator_prime){
+    Polinomy pol_to_calc;
+    pol_to_calc.head = NULL;
+    pol_to_calc.tail = NULL;
+    int to_calc;
+    int field_card = pow((double)modulo, (double)generator_prime_degree); 
+    do{
+        print_field(field);
+        printf("\nInserisci l'elemento del quale calcolare il grado moltiplicativo (2 - %d):\n", field_card-1);
+        fflush(stdout);
+        scanf("%d", &to_calc);
+    } while(to_calc < 2 || to_calc >= field_card);
+        
+    pol_to_calc = field[to_calc];
+
+    printf("\ncalcolare il grado moltiplicativo del polinomio: ");
+    print_polinomy(pol_to_calc.tail, 0);
+    printf(" ...\n\n");
+
+    for(int i=1; 1; i++){
+        fflush(stdout);
+        Polinomy appo_to_calc;
+        appo_to_calc.head = NULL;
+        appo_to_calc.tail = NULL;
+
+        copy_polinomy(&appo_to_calc, &pol_to_calc);
+
+        for(int j=1; j<i; j++){
+            appo_to_calc = mult_polinomy_modulo(pol_to_calc, appo_to_calc, generator_prime);
+        }
+
+        if(is_identity(appo_to_calc)){
+            printf("Il grado moltiplicativo del polinomio è -> %d\n\n", i);
+            printf("ciò implica che ("), print_polinomy(pol_to_calc.tail, 0), printf(")^%d è uguale a 1 sopra a GF(%d^%d)\n\n", i, modulo, generator_prime_degree);
+            destroy_polinomy(appo_to_calc.head);
+            return;
+        }
+        destroy_polinomy(appo_to_calc.head);
+    }
 }
 
 int main(void){
@@ -551,15 +684,22 @@ int main(void){
     if(1){
         int boo = 1;
         do{
-            my_getchar(0);
+            //my_getchar(0);
             choose = 0;
-            printf("\n- Operazioni possibili:\n\t1)calcolare irriducibilità\n\t2)esci\n");
+            printf("\n- Operazioni possibili:\n\t1)calcolare irriducibilità\n\t2)calcolare grado additivo\n\t3)calcolare grado moltiplicativo\n\t4)esci\n");
             fflush(stdout);
             scanf("%d", &choose);
-            printf("%d", choose);
             switch(choose){
                 case 1:
                     irreduxor(field);
+                    boo = 1;
+                    break;
+                case 2:
+                    degree_additive_calculator(field);
+                    boo = 1;
+                    break;
+                case 3:
+                    degree_molteplicity_calculator(field, generator_prime);
                     boo = 1;
                     break;
                 default:
