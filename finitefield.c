@@ -17,28 +17,34 @@ typedef struct Polinomy{
 int modulo;
 int generator_prime_degree;
 
-void insert_element(Polinomy *polinomy, int coefficient, int degree);
-void print_polinomy(Monomy *monomy, int boo);
-void delete_last(Polinomy *polinomy);
-int moltiplicative_reverse(int num);
-int modularnegativitiator(int n);
-void sum_monomy_inpol(Polinomy *tosum, int coefficient, int degree);
-Monomy return_monomy_from_polinomy(Polinomy polinomy, int degree);
-void copy_polinomy(Polinomy *blank, Polinomy *tocopy);
-void destroy_polinomy(Monomy *head);
-Polinomy division_rest(Polinomy dividendo, Polinomy divisore);
-Polinomy sum_polinomy(Polinomy pol_1, Polinomy pol_2);
-Polinomy mult_polinomy_modulo(Polinomy pol_1, Polinomy pol_2, Polinomy generator_prime);
-int radix_pol(Polinomy pol);
-void field_generator(Polinomy field[]);
-void make_generator_polinomy(Polinomy *generator_prime);
-int get_degree_from_polinomy(Monomy *tail);
-void make_rest_n_degree(Polinomy *rest_n_degree, Polinomy *sub_modular_field, Polinomy generator_prime);
-void print_additive_matrix();
-void print_moltiplicative_matrix();
-void my_getchar(int get);
-void check_primality(Polinomy field[], Polinomy findirreduc, int *_is_prime);
-void print_from_file(char *filename);
+void        insert_element(Polinomy *polinomy, int coefficient, int degree);
+void        print_polinomy(Monomy *monomy, int boo);
+void        delete_last(Polinomy *polinomy);
+int         moltiplicative_reverse(int num);
+int         modularnegativitiator(int n);
+void        sum_monomy_inpol(Polinomy *tosum, int coefficient, int degree);
+Monomy      return_monomy_from_polinomy(Polinomy polinomy, int degree);
+void        copy_polinomy(Polinomy *blank, Polinomy *tocopy);
+void        destroy_polinomy(Monomy *head);
+Polinomy    division_rest(Polinomy dividendo, Polinomy divisore);
+Polinomy    sum_polinomy(Polinomy pol_1, Polinomy pol_2);
+Polinomy    mult_polinomy_modulo(Polinomy pol_1, Polinomy pol_2, Polinomy generator_prime);
+int         radix_pol(Polinomy pol);
+void        field_generator(Polinomy field[]);
+void        make_generator_polinomy(Polinomy *generator_prime);
+int         get_degree_from_polinomy(Monomy *tail);
+void        make_rest_n_degree(Polinomy *rest_n_degree, Polinomy *sub_modular_field, Polinomy generator_prime);
+void        print_additive_matrix();
+void        print_moltiplicative_matrix();
+void        my_getchar(int get);
+void        check_primality(Polinomy field[], Polinomy findirreduc, int *_is_prime);
+void        print_from_file(char *filename);
+int         is_null(Polinomy pol);
+int         is_identity(Polinomy pol);
+void        irreduxor(Polinomy field[]);
+Polinomy    polinomy_mult_constant(Polinomy pol, int n);
+void        degree_additive_calculator(Polinomy field[]);
+void        degree_molteplicity_calculator(Polinomy field[], Polinomy generator_prime);
 
 void insert_element(Polinomy *polinomy, int coefficient, int degree){
     Monomy *new = malloc(sizeof(struct Monomy));
@@ -680,35 +686,28 @@ int main(void){
         my_getchar(1);
     }
 
-    //calculate irreducible polinomy over GF(p^n)
-    if(1){
-        int boo = 1;
-        do{
-            //my_getchar(0);
-            choose = 0;
-            printf("\n- Operazioni possibili:\n\t1)calcolare irriducibilità\n\t2)calcolare grado additivo\n\t3)calcolare grado moltiplicativo\n\t4)esci\n");
-            fflush(stdout);
-            scanf("%d", &choose);
-            switch(choose){
-                case 1:
-                    irreduxor(field);
-                    boo = 1;
-                    break;
-                case 2:
-                    degree_additive_calculator(field);
-                    boo = 1;
-                    break;
-                case 3:
-                    degree_molteplicity_calculator(field, generator_prime);
-                    boo = 1;
-                    break;
-                default:
-                    boo = 0;
-                    break;
-            }
-        } while(boo);
-    }
+    int boo = 1;
+    do{
+        //my_getchar(0);
+        choose = 0;
+        printf("\n- Operazioni possibili:\n\t1)calcolare irriducibilità\n\t2)calcolare grado additivo\n\t3)calcolare grado moltiplicativo\n\t4)esci\n");
+        fflush(stdout);
+        scanf("%d", &choose);
+        switch(choose){
+            case 1:
+                irreduxor(field);
+                break;
+            case 2:
+                degree_additive_calculator(field);
+                break;
+            case 3:
+                degree_molteplicity_calculator(field, generator_prime);
+                break;
+            default:
+                boo = 0;
+                break;
+        }
+    } while(boo);
     
-
     return 0;
 }
