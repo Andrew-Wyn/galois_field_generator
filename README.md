@@ -9,5 +9,6 @@ TODO:
 # usage
 
 
-- gcc finitefield -lm
-- ./a.(out/exe)
+
+gcc finitefield -lm
+./a.(out/exe)
