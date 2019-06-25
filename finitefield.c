@@ -16,6 +16,7 @@ typedef struct Polinomy{
 
 int modulo;
 int generator_prime_degree;
+int generator_splitting_degree;
 
 void        insert_element(Polinomy *polinomy, int coefficient, int degree);
 void        print_polinomy(Monomy *monomy, int boo);
@@ -32,6 +33,7 @@ Polinomy    mult_polinomy_modulo(Polinomy pol_1, Polinomy pol_2, Polinomy genera
 int         radix_pol(Polinomy pol);
 void        field_generator(Polinomy field[]);
 void        make_generator_polinomy(Polinomy *generator_prime);
+void        make_splitting_polinomy(Polinomy *to_split);
 int         get_degree_from_polinomy(Monomy *tail);
 void        make_rest_n_degree(Polinomy *rest_n_degree, Polinomy *sub_modular_field, Polinomy generator_prime);
 void        print_additive_matrix();
@@ -45,6 +47,10 @@ void        irreduxor(Polinomy field[]);
 Polinomy    polinomy_mult_constant(Polinomy pol, int n);
 void        degree_additive_calculator(Polinomy field[]);
 void        degree_molteplicity_calculator(Polinomy field[], Polinomy generator_prime);
+int         mcd(int a, int b);
+int         mcm(int a, int b);
+void        splitting_field();
+Polinomy    division_quotient(Polinomy dividendo, Polinomy divisore);
 
 void insert_element(Polinomy *polinomy, int coefficient, int degree){
     Monomy *new = malloc(sizeof(struct Monomy));
@@ -208,6 +214,56 @@ Polinomy division_rest(Polinomy dividendo, Polinomy divisore){
     return ret;
 }
 
+Polinomy division_quotient(Polinomy dividendo, Polinomy divisore){ // optimize
+    Polinomy appo_divisore;
+    appo_divisore.head = NULL;
+    appo_divisore.tail = NULL;
+
+    Polinomy quotient;
+    quotient.head = NULL;
+    quotient.tail = NULL;
+
+    copy_polinomy(&appo_divisore, &divisore);
+    while(appo_divisore.tail->coefficient == 0){
+        delete_last(&appo_divisore);
+    }
+    int degreedenom = appo_divisore.tail->degree;
+    Polinomy *p_ret, ret;
+    p_ret = &ret;
+    copy_polinomy(p_ret, &dividendo);
+    Monomy appo; // monomio del quoziente
+    appo.degree = 0;
+    appo.coefficient = 0;
+
+    int c_monomy=0;
+    Monomy *monomys_return_reversed = malloc((degreedenom) * sizeof(Monomy));
+
+
+    while(p_ret -> tail -> degree >= appo_divisore.tail -> degree){
+        appo.coefficient = p_ret -> tail -> coefficient * moltiplicative_reverse(appo_divisore.tail -> coefficient);
+        appo.degree = p_ret -> tail -> degree - appo_divisore.tail -> degree;
+        for(int i=degreedenom; i>=0; i--){
+            Monomy appo2; 
+            appo2.coefficient = modularnegativitiator(-((return_monomy_from_polinomy(appo_divisore, i).coefficient * appo.coefficient)%modulo));
+            appo2.degree = return_monomy_from_polinomy(appo_divisore, i).degree + appo.degree;
+            sum_monomy_inpol(p_ret,appo2.coefficient, appo2.degree);
+        }
+        delete_last(p_ret);
+        
+        monomys_return_reversed = (Monomy *)realloc(monomys_return_reversed, (++c_monomy) * sizeof(Monomy));
+        monomys_return_reversed[c_monomy-1].coefficient = appo.coefficient;
+        monomys_return_reversed[c_monomy-1].degree = appo.degree;
+    }
+
+    for(int i=c_monomy-1; i>=0; i--){
+        insert_element(&quotient, modularnegativitiator(monomys_return_reversed[i].coefficient), monomys_return_reversed[i].degree);
+    }
+
+    destroy_polinomy(appo_divisore.head);
+
+    return quotient;
+}
+
 Polinomy sum_polinomy(Polinomy pol_1, Polinomy pol_2){
     Polinomy sum;
     sum.head = NULL;
@@ -345,6 +401,33 @@ void make_generator_polinomy(Polinomy *generator_prime){
             coefficient = modularnegativitiator(coefficient);
         } while(!coefficient);
         insert_element(generator_prime, coefficient, generator_prime_degree);
+}
+
+void make_splitting_polinomy(Polinomy *to_split){
+        do{
+            printf("Inserisci il grado del polinomio da spezzare n >= 1\n");
+            fflush(stdout);
+            scanf("%d", &generator_splitting_degree);
+        } while(generator_splitting_degree < 1);
+
+        for(int i=0; i<generator_splitting_degree; i++){
+            int coefficient;
+            printf("Inserisci il coefficiente del termine a grado %d\n", i);
+            fflush(stdout);
+            scanf("%d", &coefficient);
+            coefficient = modularnegativitiator(coefficient);
+            insert_element(to_split, coefficient, i);
+        }
+
+        //avoid santo's mistere
+        int coefficient;
+        do{
+            printf("Inserisci il coefficiente del termine a grado %d\n", generator_splitting_degree);
+            fflush(stdout);
+            scanf("%d", &coefficient);
+            coefficient = modularnegativitiator(coefficient);
+        } while(!coefficient);
+        insert_element(to_split, coefficient, generator_splitting_degree);
 }
 
 int get_degree_from_polinomy(Monomy *tail){
@@ -618,6 +701,111 @@ void degree_molteplicity_calculator(Polinomy field[], Polinomy generator_prime){
     }
 }
 
+int mcd(int a, int b) {
+    while (a != b) {
+        if (a > b) {
+            a = a - b;
+        }
+        else {
+            b = b - a;
+        }
+    }
+
+    return a;
+}
+
+int mcm(int a, int b) {
+    return (a*b)/mcd(a,b);
+}
+
+void splitting_field(){ // il polinomio da spezzare
+
+    generator_splitting_degree = 0;
+
+    printf("**** Calcolatore campo di spezzamento dato un polinomio appartenente ad un anello di polinomi ****\n\n");
+    printf("prendere il polinomio e scomporlo in fattori primi su Zp[x], P(x) = p1(x)...pn(x),\nil campo di spezzamento di P(x) da teorema e' isomorfo a, m = mcm(d(p1), ..., d(pn)), Zp^m.\n\n");
+    printf("-> Inserire il polinomio appartanente a Z%d, da spezzare per crearne il campo di spezzamento\n\n", modulo);
+    fflush(stdout);
+
+    Polinomy toSplit;
+    toSplit.head = NULL;
+    toSplit.tail = NULL;
+
+    make_splitting_polinomy(&toSplit);
+    print_polinomy(toSplit.tail, 0);
+    printf("\n");
+
+
+    Polinomy factorization[(int)(pow((double)modulo, (double)generator_splitting_degree+1) - modulo)];
+
+    
+    for(int i=0; i<(pow((double)modulo, (double)generator_splitting_degree+1) - modulo); i++){
+        factorization[i].head = NULL;
+        factorization[i].tail = NULL;
+        int coefficients[generator_splitting_degree+1];  
+        //initialize coefficients  
+        int appo_coeff = i+modulo;
+        for(int j=0; j<generator_splitting_degree+1; j++){
+            coefficients[j] = modularnegativitiator(appo_coeff);
+            appo_coeff /= modulo;
+        }
+        for(int j=0; j<generator_splitting_degree+1; j++){
+            insert_element(factorization + i, coefficients[j], j);
+        }
+    }
+
+    int counter = 0;
+
+    while(get_degree_from_polinomy(toSplit.tail) > 0 && get_degree_from_polinomy(toSplit.tail) >= get_degree_from_polinomy(factorization[counter].tail)){
+        Polinomy appo_ciclo = division_rest(toSplit, factorization[counter]);
+        
+        if(is_null(appo_ciclo)){
+            while(is_null(appo_ciclo)){
+                toSplit = division_quotient(toSplit, factorization[counter]);
+                appo_ciclo = division_rest(toSplit, factorization[counter]);                    
+            }
+            counter++;
+        } else {
+            
+            factorization[counter].head = NULL;
+            factorization[counter].tail = NULL;
+
+            counter++;
+        }
+    }
+
+    for(int i=counter; i<(pow((double)modulo, (double)generator_splitting_degree+1) - modulo); i++){
+        fflush(stdout);
+        factorization[i].head = NULL;
+        factorization[i].tail = NULL;
+    }
+
+    printf("\t\tI fattori sono:\n");
+
+    int *degrees = malloc(0);
+    int c_degs = 0;
+
+    for(int i=0; i<(pow((double)modulo, (double)generator_splitting_degree+1) - modulo); i++){
+        if(factorization[i].tail != NULL){
+            print_polinomy(factorization[i].tail, 0);
+
+            degrees = realloc(degrees, (++c_degs)*sizeof(int));
+            degrees[c_degs -1] = get_degree_from_polinomy(factorization[i].tail);
+            printf("\n");
+        }
+        
+    }
+
+    // use that hint -> lcm(a,b,c) = lcm(lcm(a,b),c)
+    int appo_mcm = degrees[0]; 
+    for(int i=1; i<c_degs; i++){
+        appo_mcm = mcm(appo_mcm, degrees[i]);
+    }
+
+    printf("\n ----- il campo di spezzamento del polinomio e' isomorfo a GF(%d^%d) -----\n", modulo, appo_mcm);
+
+}
+
 int main(void){
     generator_prime_degree = 0;
 
@@ -633,7 +821,7 @@ int main(void){
     sub_modular_field.head = NULL;
     sub_modular_field.tail = NULL;
 
-    char choose;
+    int choose;
 
     system("clear");
     print_from_file("title.txt");
@@ -672,9 +860,10 @@ int main(void){
 
     my_getchar(0);
 
+    char cchoose = 0;
     printf("\n- Stampare le tabelle di additività e moltiplicazione ? (Y/n):\n");
     fflush(stdout);
-    scanf("%c", &choose);
+    scanf("%c", &cchoose);
 
     if(choose == 'Y'){
         //stampa tabella additiva
@@ -690,7 +879,7 @@ int main(void){
     do{
         //my_getchar(0);
         choose = 0;
-        printf("\n- Operazioni possibili:\n\t1)calcolare irriducibilità\n\t2)calcolare grado additivo\n\t3)calcolare grado moltiplicativo\n\t4)esci\n");
+        printf("\n- Operazioni possibili:\n\t1)calcolare irriducibilità\n\t2)calcolare grado additivo\n\t3)calcolare grado moltiplicativo\n\t4)stampare campo GF(%d^%d) presente in memoria\n\t5)calcolare campo di spezzamento di un polinomio su Z%d\n\t6)esci\n", modulo, generator_prime_degree, modulo);
         fflush(stdout);
         scanf("%d", &choose);
         switch(choose){
@@ -702,6 +891,18 @@ int main(void){
                 break;
             case 3:
                 degree_molteplicity_calculator(field, generator_prime);
+                break;
+            case 4:
+                print_field(field);
+                break;
+            case 5:
+                // campo di spezzamento su Zp dato un polinomio
+                /*
+                    prendere il polinomio e scomporlo in fattori primi su Zp[x], P(x) = p1(x)...pn(x), 
+                    il campo di spezzamento di P(x) da teorema e' isomorfo a, m = (d(p1), ..., d(pn)), Zp^m.
+                */
+
+                splitting_field();
                 break;
             default:
                 boo = 0;
