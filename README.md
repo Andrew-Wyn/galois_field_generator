@@ -6,3 +6,7 @@ added calculator for splitting field given a polinomy over Zp (finite field of c
 TODO:
 	- optimize function that return division quotient between two polinomies
 
+# usage
+'''
+gcc finitefield -lm
+'''
