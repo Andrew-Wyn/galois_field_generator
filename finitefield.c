@@ -51,6 +51,7 @@ int         mcd(int a, int b);
 int         mcm(int a, int b);
 void        splitting_field();
 Polinomy    division_quotient(Polinomy dividendo, Polinomy divisore);
+void        insert_element_head(Polinomy *polinomy, Monomy monomy);
 
 void insert_element(Polinomy *polinomy, int coefficient, int degree){
     Monomy *new = malloc(sizeof(struct Monomy));
@@ -69,6 +70,21 @@ void insert_element(Polinomy *polinomy, int coefficient, int degree){
     }
     
     polinomy->tail = new;
+}
+
+void insert_element_head(Polinomy *polinomy, Monomy monomy){
+    Monomy *new = malloc(sizeof(struct Monomy));
+    new -> coefficient = monomy.coefficient;
+    new -> degree = monomy.degree;
+    new -> prev = NULL;
+    new -> next = NULL;
+
+    if(polinomy->tail == NULL){
+        polinomy->tail = new;
+    }
+
+    new->next = polinomy->head;
+    polinomy->head = new;
 }
 
 void print_polinomy(Monomy *monomy, int boo){
@@ -228,15 +244,16 @@ Polinomy division_quotient(Polinomy dividendo, Polinomy divisore){ // optimize
         delete_last(&appo_divisore);
     }
     int degreedenom = appo_divisore.tail->degree;
-    Polinomy *p_ret, ret;
+    Polinomy *p_ret, ret; // need for the runtime rest
     p_ret = &ret;
     copy_polinomy(p_ret, &dividendo);
     Monomy appo; // monomio del quoziente
     appo.degree = 0;
     appo.coefficient = 0;
 
-    int c_monomy=0;
-    Monomy *monomys_return_reversed = malloc((degreedenom) * sizeof(Monomy));
+    // ottimizzato utilizzo della memoria togliendo la struttura d'appoggio utilizzando un inserimento in testa nella creazione del polinomio 
+    /*int c_monomy=0;
+    Monomy *monomys_return_reversed = malloc((degreedenom) * sizeof(Monomy));*/
 
 
     while(p_ret -> tail -> degree >= appo_divisore.tail -> degree){
@@ -250,14 +267,16 @@ Polinomy division_quotient(Polinomy dividendo, Polinomy divisore){ // optimize
         }
         delete_last(p_ret);
         
-        monomys_return_reversed = (Monomy *)realloc(monomys_return_reversed, (++c_monomy) * sizeof(Monomy));
+        /*monomys_return_reversed = (Monomy *)realloc(monomys_return_reversed, (++c_monomy) * sizeof(Monomy));
         monomys_return_reversed[c_monomy-1].coefficient = appo.coefficient;
-        monomys_return_reversed[c_monomy-1].degree = appo.degree;
+        monomys_return_reversed[c_monomy-1].degree = appo.degree;*/
+        insert_element_head(&quotient, appo);
     }
 
-    for(int i=c_monomy-1; i>=0; i--){
+    // ottimizzato andando a rimuovere il secondo ciclo per creare effettivamente il polinomio di rotorno
+    /*for(int i=c_monomy-1; i>=0; i--){ // non necessario se inserisco in testa, ma inserendo in coda lo diventa
         insert_element(&quotient, modularnegativitiator(monomys_return_reversed[i].coefficient), monomys_return_reversed[i].degree);
-    }
+    }*/
 
     destroy_polinomy(appo_divisore.head);
 
